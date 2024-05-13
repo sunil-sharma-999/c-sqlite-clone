@@ -3,7 +3,6 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
-#include "stdio.h"
 
 void print_prompt() { printf("db > "); }
 
