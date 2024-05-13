@@ -1,8 +1,8 @@
 #define _GNU_SOURCE
 #include "main.h"
 #include "stdlib.h"
-#include "stdio.h"
 #include "string.h"
+#include "stdio.h"
 
 void print_prompt() { printf("db > "); }
 
@@ -36,6 +36,51 @@ InputBuffer *new_input_buffer()
     return input_buffer;
 }
 
+MetaCommandResult do_meta_command(InputBuffer *buf)
+{
+    if (strcmp(buf->buffer, ".exit") == 0)
+    {
+        close_input_buffer(buf);
+        exit(EXIT_SUCCESS);
+        return META_COMMAND_SUCCESS;
+    }
+    else
+    {
+        return META_COMMAND_INVALID;
+    }
+}
+
+PrepareResult prepare_statement(InputBuffer *buf, Statement *stmt)
+{
+    if (strncmp(buf->buffer, "insert", 6) == 0)
+    {
+        stmt->type = STATEMENT_INSERT;
+        return PREPARE_SUCCESS;
+    }
+    if (strcmp(buf->buffer, "select") == 0)
+    {
+        stmt->type = STATEMENT_SELECT;
+        return PREPARE_SUCCESS;
+    }
+
+    return PREPARE_INVALID_STATEMENT;
+}
+
+void execute_statement(Statement *stmt)
+{
+    switch (stmt->type)
+    {
+    case STATEMENT_INSERT:
+        printf("Insert statement");
+        break;
+    case STATEMENT_SELECT:
+        printf("Select statement");
+        break;
+    default:
+        break;
+    }
+}
+
 int main()
 {
     InputBuffer *input_buffer = new_input_buffer();
@@ -44,14 +89,30 @@ int main()
         print_prompt();
         read_input(input_buffer);
 
-        if (strcmp(input_buffer->buffer, ".exit") == 0)
+        if (input_buffer->buffer[0] == '.')
         {
-            close_input_buffer(input_buffer);
-            exit(EXIT_SUCCESS);
+            switch (do_meta_command(input_buffer))
+            {
+            case (META_COMMAND_SUCCESS):
+                continue;
+            case (META_COMMAND_INVALID):
+                printf("Invalid command '%s'\n", input_buffer->buffer);
+                continue;
+            }
         }
-        else
+        // Statements
+        Statement stmt;
+        switch (prepare_statement(input_buffer, &stmt))
         {
-            printf("Invalid command '%s'.\n", input_buffer->buffer);
+        case (PREPARE_SUCCESS):
+            break;
+        case (PREPARE_INVALID_STATEMENT):
+            printf("Invalid keyword at start of '%s'.\n",
+                   input_buffer->buffer);
+            continue;
         }
+
+        execute_statement(&stmt);
+        printf(" Executed.\n");
     }
 }
